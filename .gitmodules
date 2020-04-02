@@ -1,0 +1,3 @@
+[submodule "public/data/covid"]
+	path = public/data/covid
+	url = https://github.com/nytimes/covid-19-data.git
