@@ -3,11 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import Papa from "papaparse";
 import DataTable from "./DataTable";
-import StateFilter from "./StateFilter";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, ReferenceLine, ReferenceArea,
-    ReferenceDot, Tooltip, CartesianGrid, Legend, Brush, ErrorBar, AreaChart, Area,
-    Label, LabelList } from 'recharts';
-import { scalePow, scaleLog } from 'd3-scale';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 
 class App extends Component {
     constructor(props) {
@@ -24,7 +20,7 @@ class App extends Component {
     }
 
     fetchCsv() {
-        return fetch('/data/covid-19-data/us-states.csv').then(function (response) {
+        return fetch('/data/covid/us-states.csv').then(function (response) {
             let reader = response.body.getReader();
             let decoder = new TextDecoder('utf-8');
 
@@ -43,10 +39,10 @@ class App extends Component {
         var headers = data.shift();
 
         data.sort(function (a, b) {
-            if (a[1] === b[1]) {
+            if (a.state === b.state) {
                 return 0;
             }
-            if (a[1] > b[1]) {
+            if (a.state > b.state) {
                 return 1;
             }
             return -1;
@@ -55,7 +51,7 @@ class App extends Component {
         const arrayColumn = (arr, n) => arr.map(x => x[n]);
         var filterOptions = arrayColumn(data, 1);
 
-        let chartData = data.filter((item, i, ar) => item[1] === "New York");
+        let chartData = data.filter((item, i, ar) => item.state === "New York");
         let unique = filterOptions.filter((item, i, ar) => ar.indexOf(item) === i);
 
         this.setState({
@@ -70,6 +66,8 @@ class App extends Component {
         let csvData = await this.fetchCsv();
 
         Papa.parse(csvData, {
+            dynamicTyping: true,
+            header: true,
             complete: this.getData
         });
     }
@@ -80,22 +78,23 @@ class App extends Component {
                 <header className="App-header">
                     <img src={logo} className="App-logo" alt="logo"/>
                     <h1>Simple Covid Data Browser</h1>
-                    <StateFilter filterOptions={this.state.filterOptions} onChange={this.filterBy}/>
 
-                    <LineChart
-                        width={1280}
-                        height={400}
-                        data={this.state.chartData}
-                        margin={{top: 5, right: 20, left: 10, bottom: 5}}
-                    >
-                        <XAxis dataKey="0" name="date"/>
-                        <YAxis dataKey="3" domain={[0, 'dataMax']} scale='linear' />
-                        <Tooltip/>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <Line type="monotone" dataKey="3" name="cases" stroke="#ff7300" yAxisId={0}/>
-                        <Line type="monotone" dataKey="4" name="deaths" stroke="#ff3300" yAxisId={0}/>
-                        <Legend />
-                    </LineChart>
+                    <h3>Graph of NY Data</h3>
+                    <ResponsiveContainer aspect="2" >
+                        <LineChart
+                            data={this.state.chartData}
+                            margin={{top: 10, right: 80, left: 80, bottom: 100}}
+                        >
+                            <XAxis dataKey="date" angle="45" type="category" />
+                            <YAxis dataKey="cases" label="Cases" type="number" scale='linear' domain={[0, 'dataMax + 1000']} yAxisId="0" />
+                            <YAxis dataKey="deaths" type="number" scale='linear' domain={[0, 'dataMax + 1000']}  orientation="right" yAxisId="1" />
+                            <Tooltip/>
+                            <CartesianGrid/>
+                            <Line  dataKey="cases" name="cases" type="monotone" stroke="#ff7300" yAxisId={0}/>
+                            <Line  dataKey="deaths" name="deaths" type="monotone" stroke="#ff3300" yAxisId={1}/>
+                            <Legend verticalAlign="top" />
+                        </LineChart>
+                    </ResponsiveContainer>
                 </header>
                 <DataTable headers={this.state.headers} rows={this.state.data} filter={this.state.filter}/>
             </div>
